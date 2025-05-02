@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import datetime
 import requests
 import os
@@ -10,7 +10,16 @@ def run_script():
     API_KEY = os.getenv("API_KEY")
     WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
-    fecha_actual = datetime.datetime.now().strftime('%d%m%Y')
+    # Obtener fecha desde la URL (formato esperado: DDMMYYYY)
+    fecha_param = request.args.get('fecha')
+
+    if fecha_param and len(fecha_param) == 8:
+        fecha_actual = fecha_param
+    else:
+        fecha_actual = datetime.datetime.now().strftime('%d%m%Y')
+
+    print(f"📅 Obteniendo licitaciones publicadas el {fecha_actual}")
+
     url = "https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.json"
     licitaciones = []
     pagina = 1
@@ -53,4 +62,5 @@ def run_script():
 
     headers = {"Content-Type": "application/json"}
     res = requests.post(WEBHOOK_URL, json={"licitaciones": licitaciones}, headers=headers)
-    return jsonify({"status": "success", "enviadas": len(licitaciones)}), 200
+    return jsonify({"status": "success", "enviadas": len(licitaciones), "fecha": fecha_actual}), 200
+
