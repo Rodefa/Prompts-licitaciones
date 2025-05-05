@@ -4,19 +4,24 @@ import datetime
 import os
 from flask import Flask, request
 
-# Configuración de la app Flask (para Render)
+# Flask App para Render
 app = Flask(__name__)
 
 # Configuración sensible desde entorno
-API_KEY = os.getenv("API_KEY")  # ← Define esta variable en Render
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # ← Debe incluir el token: ?token=ReRo15
+API_KEY = os.getenv("API_KEY")  # ← Define en Render
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # ← Define en Render (con ?token=...)
+ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")  # ← Token de seguridad
 
 @app.route("/run", methods=["GET"])
 def run_script():
     token_recibido = request.args.get("token")
-    token_correcto = os.getenv("ACCESS_TOKEN")
+    
+    # Validación de variables esenciales
+    if not API_KEY or not WEBHOOK_URL or not ACCESS_TOKEN:
+        return "❌ Configuración incompleta. Revisa las variables de entorno.", 500
 
-    if token_recibido != token_correcto:
+    # Seguridad por token
+    if token_recibido != ACCESS_TOKEN:
         return "❌ Token inválido", 403
 
     fecha_actual = datetime.datetime.now().strftime('%d%m%Y')
@@ -26,6 +31,7 @@ def run_script():
     licitaciones = []
     pagina = 1
     MAX_REINTENTOS = 3
+    MAX_LICITACIONES = 1000
     codigos_vistos = set()
     detener_por_bucle = False
 
@@ -39,7 +45,12 @@ def run_script():
         }
 
         while intentos < MAX_REINTENTOS:
-            response = requests.get(url, params=params)
+            try:
+                response = requests.get(url, params=params, timeout=20)
+            except requests.exceptions.RequestException as e:
+                print("❌ Error en la solicitud:", e)
+                return "❌ Error en conexión a Mercado Público", 500
+
             if response.status_code == 200:
                 data = response.json()
                 lista = data.get("Listado", [])
@@ -69,6 +80,13 @@ def run_script():
                     break
 
                 print(f"✅ Página {pagina} cargada. Total acumulado: {len(licitaciones)}")
+
+                # Control de límite para evitar sobrecarga
+                if len(licitaciones) >= MAX_LICITACIONES:
+                    print(f"🛑 Límite de {MAX_LICITACIONES} licitaciones alcanzado. Finalizando.")
+                    detener_por_bucle = True
+                    break
+
                 pagina += 1
                 time.sleep(0.3)
                 break
@@ -86,20 +104,24 @@ def run_script():
             print(f"❌ No se pudo recuperar la página {pagina} después de {MAX_REINTENTOS} intentos.")
             break
 
-    # Enviar los datos al webhook
+    # Enviar datos al webhook si hay resultados
     if licitaciones:
         headers = {"Content-Type": "application/json"}
-        res = requests.post(WEBHOOK_URL, json={"licitaciones": licitaciones}, headers=headers)
-        if res.status_code == 200:
-            print("📤 Lote único enviado correctamente.")
-            return "✅ Licitaciones enviadas"
-        else:
-            print("❌ Error al enviar al webhook:", res.status_code)
-            return "❌ Fallo al enviar", 500
+        try:
+            res = requests.post(WEBHOOK_URL, json={"licitaciones": licitaciones}, headers=headers, timeout=20)
+            if res.status_code == 200:
+                print("📤 Lote único enviado correctamente.")
+                return "✅ Licitaciones enviadas correctamente"
+            else:
+                print("❌ Error al enviar al webhook:", res.status_code)
+                return "❌ Fallo al enviar", 500
+        except requests.exceptions.RequestException as e:
+            print("❌ Error al conectar al webhook:", e)
+            return "❌ Webhook inaccesible", 500
     else:
         print("⚠️ No se encontraron licitaciones.")
         return "⚠️ No hay licitaciones para hoy"
 
-# Solo para correr en local (Render ya maneja esto)
+# Para ejecución local
 if __name__ == "__main__":
     app.run(debug=True)
