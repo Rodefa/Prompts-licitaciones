@@ -8,15 +8,10 @@ app = Flask(__name__)
 
 # CONFIGURACIÓN
 API_KEY = os.getenv("API_KEY")  # Clave API de Mercado Público
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Webhook de N8N con token incluido en la URL
-TOKEN_CORRECTO = "ReRo15"  # 🔐 Token estático para simplificar
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Webhook de N8N con token ya incluido en la URL
 
 @app.route("/run", methods=["GET"])
 def run_script():
-    token_recibido = request.args.get("token")
-    if token_recibido != TOKEN_CORRECTO:
-        return "❌ Token incorrecto", 403
-
     # Fecha actual en formato requerido
     fecha_actual = datetime.datetime.now().strftime('%d%m%Y')
     print(f"📅 Obteniendo licitaciones publicadas el {fecha_actual}")
