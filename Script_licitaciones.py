@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 # CONFIGURACIÓN
 API_KEY = os.getenv("API_KEY")  # Clave API de Mercado Público
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Webhook de N8N con token ya incluido en la URL
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Webhook de N8N
 
 @app.route("/run", methods=["GET"])
 def run_script():
@@ -44,15 +44,17 @@ def run_script():
                 nuevos = 0
                 for lic in lista:
                     codigo = lic.get("CodigoExterno", "")
-                    if codigo in codigos_vistos:
-                        continue
+                    url_publica = lic.get("UrlPublica", "")
+                    if not url_publica or codigo in codigos_vistos:
+                        continue  # Ignora si no hay URL o está repetido
+
                     codigos_vistos.add(codigo)
                     nuevos += 1
                     licitaciones.append({
                         "codigo": codigo,
                         "nombre": lic.get("Nombre", ""),
                         "fecha_cierre": lic.get("FechaCierre", ""),
-                        "ver_detalle": f"https://www.mercadopublico.cl/licitaciones/detalle/{codigo}",
+                        "url_publica": url_publica,
                         "fecha_descarga": fecha_actual
                     })
 
@@ -77,7 +79,8 @@ def run_script():
         else:
             return f"❌ Error al enviar al webhook: {res.status_code}", 500
     else:
-        return "⚠️ No se encontraron licitaciones para hoy."
+        return "⚠️ No se encontraron licitaciones con URL válida para hoy."
 
 if __name__ == "__main__":
     app.run(debug=True)
+
