@@ -42,21 +42,22 @@ def run_script():
                     break
 
                 nuevos = 0
-                for lic in lista:
-                    codigo = lic.get("CodigoExterno", "")
-                    url_publica = lic.get("UrlPublica", "")
-                    if not url_publica or codigo in codigos_vistos:
-                        continue  # Ignora si no hay URL o está repetido
+             for lic in lista:
+    codigo = lic.get("CodigoExterno", "")
+    url_publica = lic.get("UrlPublica", "")
+    if codigo in codigos_vistos:
+        continue
 
-                    codigos_vistos.add(codigo)
-                    nuevos += 1
-                    licitaciones.append({
-                        "codigo": codigo,
-                        "nombre": lic.get("Nombre", ""),
-                        "fecha_cierre": lic.get("FechaCierre", ""),
-                        "url_publica": url_publica,
-                        "fecha_descarga": fecha_actual
-                    })
+    codigos_vistos.add(codigo)
+    nuevos += 1
+    licitaciones.append({
+        "codigo": codigo,
+        "nombre": lic.get("Nombre", ""),
+        "fecha_cierre": lic.get("FechaCierre", ""),
+        "url_publica": url_publica,
+        "tiene_url": bool(url_publica),
+        "fecha_descarga": fecha_actual
+    })
 
                 if nuevos == 0:
                     print("🛑 Fin del bucle: sin nuevos registros.")
