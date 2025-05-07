@@ -42,22 +42,22 @@ def run_script():
                     break
 
                 nuevos = 0
-             for lic in lista:
-    codigo = lic.get("CodigoExterno", "")
-    url_publica = lic.get("UrlPublica", "")
-    if codigo in codigos_vistos:
-        continue
+                for lic in lista:
+                    codigo = lic.get("CodigoExterno", "")
+                    url_publica = lic.get("UrlPublica", "")
+                    if codigo in codigos_vistos:
+                        continue
 
-    codigos_vistos.add(codigo)
-    nuevos += 1
-    licitaciones.append({
-        "codigo": codigo,
-        "nombre": lic.get("Nombre", ""),
-        "fecha_cierre": lic.get("FechaCierre", ""),
-        "url_publica": url_publica,
-        "tiene_url": bool(url_publica),
-        "fecha_descarga": fecha_actual
-    })
+                    codigos_vistos.add(codigo)
+                    nuevos += 1
+                    licitaciones.append({
+                        "codigo": codigo,
+                        "nombre": lic.get("Nombre", ""),
+                        "fecha_cierre": lic.get("FechaCierre", ""),
+                        "url_publica": url_publica,
+                        "tiene_url": bool(url_publica),
+                        "fecha_descarga": fecha_actual
+                    })
 
                 if nuevos == 0:
                     print("🛑 Fin del bucle: sin nuevos registros.")
@@ -80,8 +80,7 @@ def run_script():
         else:
             return f"❌ Error al enviar al webhook: {res.status_code}", 500
     else:
-        return "⚠️ No se encontraron licitaciones con URL válida para hoy."
+        return "⚠️ No se encontraron licitaciones para hoy."
 
 if __name__ == "__main__":
     app.run(debug=True)
-
