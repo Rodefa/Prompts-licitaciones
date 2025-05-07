@@ -3,6 +3,7 @@ import time
 import datetime
 import os
 from flask import Flask, request
+import pytz
 
 app = Flask(__name__)
 
@@ -13,7 +14,9 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Webhook de N8N
 @app.route("/run", methods=["GET"])
 def run_script():
     # Fecha actual en formato requerido
-    fecha_actual = datetime.datetime.now().strftime('%d%m%Y')
+    tz = pytz.timezone('America/Santiago')
+    fecha_actual = datetime.datetime.now(tz).strftime('%d%m%Y')
+
     print(f"📅 Obteniendo licitaciones publicadas el {fecha_actual}")
 
     url = "https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.json"
