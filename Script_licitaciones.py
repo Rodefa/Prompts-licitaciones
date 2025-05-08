@@ -47,7 +47,7 @@ def run_script():
                 nuevos = 0
                 for lic in lista:
                     codigo = lic.get("CodigoExterno", "")
-                    url_publica = lic.get("UrlPublica", "")
+                    url_publica = f"https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?CodigoExterno={codigo}"
                     if codigo in codigos_vistos:
                         continue
 
